@@ -1,3 +1,6 @@
+#ifndef R_FLATGEOBUFR_GEOJSON_H
+#define R_FLATGEOBUFR_GEOJSON_H
+
 #include <mapbox/geojson.hpp>
 #include <mapbox/geojson_impl.hpp>
 #include <mapbox/geojson/rapidjson.hpp>
@@ -26,13 +29,13 @@ struct ColumnMeta {
     uint16_t index;
 };
 
-Rect toRect(geometry geometry)
+inline Rect toRect(geometry geometry)
 {
     auto box = envelope(geometry);
     return { box.min.x, box.min.y, box.max.x, box.max.y };
 }
 
-GeometryType toGeometryType(geometry geometry)
+inline GeometryType toGeometryType(geometry geometry)
 {
     if (geometry.is<point>())
         return GeometryType::Point;
@@ -49,7 +52,7 @@ GeometryType toGeometryType(geometry geometry)
     throw std::invalid_argument("toGeometryType: Unknown geometry type");
 }
 
-static const ColumnType toColumnType(value value)
+inline static const ColumnType toColumnType(value value)
 {
     if (value.is<bool>())
         return ColumnType::Bool;
@@ -64,7 +67,7 @@ static const ColumnType toColumnType(value value)
     throw std::invalid_argument("toColumnType: Unknown column type");
 }
 
-const void parseProperties(
+inline const void parseProperties(
         const mapbox::feature::property_map &property_map,
         std::vector<uint8_t> &properties,
         std::unordered_map<std::string, ColumnMeta> columnMetas) {
@@ -97,7 +100,7 @@ const void parseProperties(
     }
 }
 
-const uint8_t *serialize(const feature_collection fc)
+inline const uint8_t *serialize(const feature_collection fc)
 {
     const auto featuresCount = fc.size();
     if (featuresCount == 0)
@@ -203,7 +206,7 @@ const uint8_t *serialize(const feature_collection fc)
     return buf;
 }
 
-const std::vector<point> extractPoints(const double *coords, uint32_t length, uint32_t offset = 0)
+inline const std::vector<point> extractPoints(const double *coords, uint32_t length, uint32_t offset = 0)
 {
     std::vector<point> points;
     for (uint32_t i = offset; i < offset + length; i += 2)
@@ -221,7 +224,7 @@ const std::vector<point> extractPoints(const double *coords, uint32_t length, ui
     */
 }
 
-const multi_line_string fromMultiLineString(
+inline const multi_line_string fromMultiLineString(
     const double *coords,
     const uint32_t coordsLength,
     const Vector<uint32_t> *ends)
@@ -238,7 +241,7 @@ const multi_line_string fromMultiLineString(
     return multi_line_string(lineStrings);
 }
 
-const polygon fromPolygon(
+inline const polygon fromPolygon(
     const double *coords,
     const uint32_t coordsLength,
     const Vector<uint32_t> *ends)
@@ -255,9 +258,9 @@ const polygon fromPolygon(
     return polygon(linearRings);
 }
 
-const geometry fromGeometry(const Geometry *geometry, const GeometryType geometryType);
+inline const geometry fromGeometry(const Geometry *geometry, const GeometryType geometryType);
 
-const multi_polygon fromMultiPolygon(const Geometry *geometry) {
+inline const multi_polygon fromMultiPolygon(const Geometry *geometry) {
     auto parts = geometry->parts();
     auto partsLength = parts->Length();
     std::vector<polygon> polygons;
@@ -269,7 +272,7 @@ const multi_polygon fromMultiPolygon(const Geometry *geometry) {
     return multi_polygon(polygons);
 }
 
-static bool isCollection(const GeometryType geometryType) {
+inline static bool isCollection(const GeometryType geometryType) {
     switch (geometryType) {
         case GeometryType::Point:
         case GeometryType::MultiPoint:
@@ -285,7 +288,7 @@ static bool isCollection(const GeometryType geometryType) {
     }
 }
 
-const geometry fromGeometry(const Geometry *geometry, const GeometryType geometryType)
+inline const geometry fromGeometry(const Geometry *geometry, const GeometryType geometryType)
 {
     if (!isCollection(geometryType)) {
         auto xy = geometry->xy()->data();
@@ -314,7 +317,7 @@ const geometry fromGeometry(const Geometry *geometry, const GeometryType geometr
     }
 }
 
-mapbox::feature::property_map readGeoJsonProperties(const Feature *feature, std::vector<ColumnMeta> columnMetas) {
+inline mapbox::feature::property_map readGeoJsonProperties(const Feature *feature, std::vector<ColumnMeta> columnMetas) {
     auto properties = feature->properties();
     auto property_map = mapbox::feature::property_map();
 
@@ -359,7 +362,7 @@ mapbox::feature::property_map readGeoJsonProperties(const Feature *feature, std:
     return property_map;
 }
 
-const mapbox::feature::feature<double> fromFeature(
+inline const mapbox::feature::feature<double> fromFeature(
     const Feature *feature,
     const GeometryType geometryType,
     std::vector<ColumnMeta> columnMetas)
@@ -371,7 +374,7 @@ const mapbox::feature::feature<double> fromFeature(
     return f;
 }
 
-const feature_collection deserialize(const void* buf)
+inline const feature_collection deserialize(const void* buf)
 {
     const uint8_t *bytes = static_cast<const uint8_t*>(buf);
 
@@ -414,3 +417,5 @@ const feature_collection deserialize(const void* buf)
 
     return fc;
 }
+
+#endif
