@@ -1,6 +1,3 @@
-#ifndef R_FLATGEOBUFR_GEOJSON_H
-#define R_FLATGEOBUFR_GEOJSON_H
-
 #include <mapbox/geojson.hpp>
 #include <mapbox/geojson_impl.hpp>
 #include <mapbox/geojson/rapidjson.hpp>
@@ -29,13 +26,13 @@ struct ColumnMeta {
     uint16_t index;
 };
 
-inline Rect toRect(geometry geometry)
+Rect toRect(geometry geometry)
 {
     auto box = envelope(geometry);
     return { box.min.x, box.min.y, box.max.x, box.max.y };
 }
 
-inline GeometryType toGeometryType(geometry geometry)
+GeometryType toGeometryType(geometry geometry)
 {
     if (geometry.is<point>())
         return GeometryType::Point;
@@ -52,7 +49,7 @@ inline GeometryType toGeometryType(geometry geometry)
     throw std::invalid_argument("toGeometryType: Unknown geometry type");
 }
 
-inline static const ColumnType toColumnType(value value)
+static const ColumnType toColumnType(value value)
 {
     if (value.is<bool>())
         return ColumnType::Bool;
@@ -67,7 +64,7 @@ inline static const ColumnType toColumnType(value value)
     throw std::invalid_argument("toColumnType: Unknown column type");
 }
 
-inline const void parseProperties(
+const void parseProperties(
         const mapbox::feature::property_map &property_map,
         std::vector<uint8_t> &properties,
         std::unordered_map<std::string, ColumnMeta> columnMetas) {
@@ -100,7 +97,7 @@ inline const void parseProperties(
     }
 }
 
-inline const uint8_t *serialize(const feature_collection fc)
+const uint8_t *serialize(const feature_collection fc)
 {
     const auto featuresCount = fc.size();
     if (featuresCount == 0)
@@ -199,14 +196,14 @@ inline const uint8_t *serialize(const feature_collection fc)
 
     std::copy(featureOffsets.data(), featureOffsets.data() + featureOffsets.size() * 8, std::back_inserter(data));
     std::copy(featureData.data(), featureData.data() + featureData.size(), std::back_inserter(data));
-
+    
     buf = new uint8_t[data.size()];
     memcpy(buf, data.data(), data.size());
 
     return buf;
 }
 
-inline const std::vector<point> extractPoints(const double *coords, uint32_t length, uint32_t offset = 0)
+const std::vector<point> extractPoints(const double *coords, uint32_t length, uint32_t offset = 0)
 {
     std::vector<point> points;
     for (uint32_t i = offset; i < offset + length; i += 2)
@@ -224,7 +221,7 @@ inline const std::vector<point> extractPoints(const double *coords, uint32_t len
     */
 }
 
-inline const multi_line_string fromMultiLineString(
+const multi_line_string fromMultiLineString(
     const double *coords,
     const uint32_t coordsLength,
     const Vector<uint32_t> *ends)
@@ -241,7 +238,7 @@ inline const multi_line_string fromMultiLineString(
     return multi_line_string(lineStrings);
 }
 
-inline const polygon fromPolygon(
+const polygon fromPolygon(
     const double *coords,
     const uint32_t coordsLength,
     const Vector<uint32_t> *ends)
@@ -258,9 +255,9 @@ inline const polygon fromPolygon(
     return polygon(linearRings);
 }
 
-inline const geometry fromGeometry(const Geometry *geometry, const GeometryType geometryType);
+const geometry fromGeometry(const Geometry *geometry, const GeometryType geometryType);
 
-inline const multi_polygon fromMultiPolygon(const Geometry *geometry) {
+const multi_polygon fromMultiPolygon(const Geometry *geometry) {
     auto parts = geometry->parts();
     auto partsLength = parts->Length();
     std::vector<polygon> polygons;
@@ -272,12 +269,12 @@ inline const multi_polygon fromMultiPolygon(const Geometry *geometry) {
     return multi_polygon(polygons);
 }
 
-inline static bool isCollection(const GeometryType geometryType) {
+static bool isCollection(const GeometryType geometryType) {
     switch (geometryType) {
         case GeometryType::Point:
         case GeometryType::MultiPoint:
         case GeometryType::LineString:
-        case GeometryType::MultiLineString:
+        case GeometryType::MultiLineString: 
         case GeometryType::Polygon:
             return false;
         case GeometryType::MultiPolygon:
@@ -288,7 +285,7 @@ inline static bool isCollection(const GeometryType geometryType) {
     }
 }
 
-inline const geometry fromGeometry(const Geometry *geometry, const GeometryType geometryType)
+const geometry fromGeometry(const Geometry *geometry, const GeometryType geometryType)
 {
     if (!isCollection(geometryType)) {
         auto xy = geometry->xy()->data();
@@ -300,7 +297,7 @@ inline const geometry fromGeometry(const Geometry *geometry, const GeometryType 
                 return multi_point { extractPoints(xy, xyLength) };
             case GeometryType::LineString:
                 return line_string(extractPoints(xy, xyLength));
-            case GeometryType::MultiLineString:
+            case GeometryType::MultiLineString: 
                 return fromMultiLineString(xy, xyLength, geometry->ends());
             case GeometryType::Polygon:
                 return fromPolygon(xy, xyLength, geometry->ends());
@@ -317,7 +314,7 @@ inline const geometry fromGeometry(const Geometry *geometry, const GeometryType 
     }
 }
 
-inline mapbox::feature::property_map readGeoJsonProperties(const Feature *feature, std::vector<ColumnMeta> columnMetas) {
+mapbox::feature::property_map readGeoJsonProperties(const Feature *feature, std::vector<ColumnMeta> columnMetas) {
     auto properties = feature->properties();
     auto property_map = mapbox::feature::property_map();
 
@@ -362,7 +359,7 @@ inline mapbox::feature::property_map readGeoJsonProperties(const Feature *featur
     return property_map;
 }
 
-inline const mapbox::feature::feature<double> fromFeature(
+const mapbox::feature::feature<double> fromFeature(
     const Feature *feature,
     const GeometryType geometryType,
     std::vector<ColumnMeta> columnMetas)
@@ -374,14 +371,14 @@ inline const mapbox::feature::feature<double> fromFeature(
     return f;
 }
 
-inline const feature_collection deserialize(const void* buf)
+const feature_collection deserialize(const void* buf)
 {
     const uint8_t *bytes = static_cast<const uint8_t*>(buf);
 
     if (memcmp(bytes, magicbytes, sizeof(magicbytes)))
         throw new std::invalid_argument("Not a FlatGeobuf file");
     uint64_t offset = sizeof(magicbytes);
-
+    
     const uint32_t headerSize = *(bytes + offset) + sizeof(uoffset_t);
     auto header = GetSizePrefixedHeader(bytes + offset);
     const auto featuresCount = header->features_count();
@@ -414,8 +411,6 @@ inline const feature_collection deserialize(const void* buf)
         fc.push_back(f);
         offset += featureSize;
     }
-
+    
     return fc;
 }
-
-#endif

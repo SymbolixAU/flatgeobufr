@@ -8,9 +8,9 @@
 //#include "feature_generated.h"
 //#include "header_generated.h"
 
+#include "packedrtree.h"
 #include "geojson.h"
 
-//#include "packedrtree.h"
 
 #include <Rcpp.h>
 
@@ -29,7 +29,14 @@ const std::string getFixture(const std::string &path)
 void test( const char* fp ) {
 
   auto expected = mapbox::geojson::parse(getFixture(fp)).get< feature_collection >();
-  // auto flatgeobuf = serialize(expected);
+  auto flatgeobuf = serialize(expected);
+
+
+  //auto expected = mapbox::geojson::parse(getFixture(fp));
+  // std::string str = mapbox::geojson::stringify( expected );
+  //
+  // return str;
+
   // auto actual = deserialize(flatgeobuf);
 
 }
